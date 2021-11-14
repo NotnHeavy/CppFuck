@@ -2,9 +2,11 @@
 #include <string>
 #include <version.h>
 
+#include <BFParser.h>
+
 #include <stdio.h>
 
-static void run(const char* const code)
+static void run(const std::string& code)
 {
 	std::cout << "To be worked on!" << std::endl;;
 }
@@ -37,7 +39,7 @@ int main(int argc, char* argv[])
 		{
 			std::cout << ">>> ";
 			std::getline(std::cin, input);
-			run(input.c_str());
+			run(input);
 		}
 	}
 }
