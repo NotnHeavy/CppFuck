@@ -152,6 +152,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="FileVersion.h" />
+    <ClInclude Include="include\BFCompiler.h" />
+    <ClInclude Include="include\BFDecompiler.h" />
     <ClInclude Include="include\BFRuntime.h" />
     <ClInclude Include="include\dynamiclib.h" />
     <ClInclude Include="include\BFParser.h" />
@@ -159,6 +161,8 @@
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\BFCompiler.cpp" />
+    <ClCompile Include="src\BFDecompiler.cpp" />
     <ClCompile Include="src\BFParser.cpp" />
     <ClCompile Include="src\BFRuntime.cpp" />
   </ItemGroup>

@@ -15,7 +15,7 @@ namespace CppFuck
 	};
 
 	// Enum structure for all C++Fuck registers.
-	enum class DECLSPEC Registers : unsigned char
+	enum class DECLSPEC Instructions : unsigned char
 	{
 		NUL = 0,
 		ADD = 1,
@@ -31,7 +31,7 @@ namespace CppFuck
 	// Struct representation of a C++Fuck register.
 	struct DECLSPEC Opcode
 	{
-		Registers Token = Registers::NUL;
+		Instructions Token = Instructions::NUL;
 		unsigned long long Line = 0, Column = 0;
 		size_t Offset = 0;
 	};

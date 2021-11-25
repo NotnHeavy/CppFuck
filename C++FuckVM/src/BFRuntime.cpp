@@ -4,48 +4,69 @@
 #include <BFParser.h>
 #include <BFRuntime.h>
 
-void CppFuck::InitiateVM(std::vector<Opcode> opcodes) // may consider allowing user to specify ostream as second parameter.
+void CppFuck::InitiateVM(const unsigned char* const code, const size_t& length) // may consider allowing user to specify ostream/istream as second parameter.
 {
 	// fixed settings: 30000 memory tape, fixed unsigned char cell size, cell wrapping, no buffer wrapping, prompts user for input. Ctrl+Z is used for EOF.
 	char* buffer = new char[30000] { 0 };
-	size_t begin = (size_t)buffer;
+	size_t begin = (size_t)buffer, index = 0;
 
-	for (size_t index = 0; index < opcodes.size(); ++index)
+	while (index < length)
 	{
-		switch (opcodes[index].Token)
+		switch ((Instructions)code[index])
 		{
-		case Registers::ADD:
-			++* buffer;
+		case Instructions::ADD:
+			++*buffer;
 			break;
-		case Registers::SUB:
-			--* buffer;
+		case Instructions::SUB:
+			--*buffer;
 			break;
-		case Registers::MOVL:
-			if ((size_t)buffer - 1 < begin)
-				throw RuntimeException("Runtime: Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: -" + std::to_string(begin - ((size_t)buffer - 1)));
-			--buffer;
-			break;
-		case Registers::MOVR:
+		case Instructions::MOVR:
 			if ((size_t)buffer + 1 > begin + 30000)
-				throw RuntimeException("Runtime: Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer - begin));
+				throw RuntimeException("Runtime: Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer - begin) + (std::string)" at bytecode index " + std::to_string(index));
 			++buffer;
 			break;
-		case Registers::IN:
+		case Instructions::MOVL:
+			if ((size_t)buffer - 1 < begin)
+				throw RuntimeException("Runtime: Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: -" + std::to_string(begin - ((size_t)buffer - 1)) + (std::string)" at bytecode index " + std::to_string(index));
+			--buffer;
+			break;
+		case Instructions::IN:
 			std::cin >> std::noskipws >> *buffer;
 			break;
-		case Registers::OUT:
+		case Instructions::OUT:
 			std::cout << *buffer;
 			break;
-		case Registers::JE:
+		case Instructions::JE:
 			if (!*buffer)
-				index = opcodes[index].Offset;
+			{
+				size_t jmp = 0;
+				for (size_t i = 0; i < sizeof(size_t); ++i)
+				{
+					jmp |= static_cast<size_t>(code[index + i + 1]) << i * 8;
+				}
+				index = jmp;
+				continue;
+			}
+			else index += sizeof(size_t);
 			break;
-		case Registers::JNE:
+		case Instructions::JNE:
 			if (*buffer)
-				index = opcodes[index].Offset;
+			{
+				size_t jmp = 0;
+				for (size_t i = 0; i < sizeof(size_t); ++i)
+				{
+					jmp |= static_cast<size_t>(code[index + i + 1]) << i * 8;
+				}
+				index = jmp;
+				continue;
+			}
+			else index += sizeof(size_t);
 			break;
 		}
+		++index;
 	}
 
+	buffer = (char*)begin;
+	delete[] buffer;
 	std::cout << std::endl;
 }

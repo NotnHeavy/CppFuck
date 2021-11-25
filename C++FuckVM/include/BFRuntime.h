@@ -3,6 +3,7 @@
 
 namespace CppFuck
 {
+	// Runtime exception to be thrown during runtime.
 	class DECLSPEC RuntimeException : public BaseCppFuckException
 	{
 	public:
@@ -12,5 +13,6 @@ namespace CppFuck
 		}
 	};
 
-	DECLSPEC void InitiateVM(std::vector<Opcode>);
+	// Inintiate the C++Fuck virtual machine and execute Brainfuck code.
+	DECLSPEC void InitiateVM(const unsigned char* const, const size_t& length);
 }

@@ -3,22 +3,27 @@
 #include <chrono>
 #include <version.h>
 #include <BFParser.h>
+#include <BFCompiler.h>
 #include <BFRuntime.h>
+#include <BFDecompiler.h>
 
-#include <stdio.h>
+// todo: fix issues with runtime. maybe i'll make a de-compiler or smth.
 
-static void run(const char* const code, const unsigned long long& length)
+static void run(const char* const code, const unsigned long long& length, char* argv[] /* TEMP */)
 {
 	try
 	{
-		// Create new timepoint.
+		// Create new timepoint and length variable.
 		std::chrono::steady_clock::time_point current = std::chrono::high_resolution_clock::now();
+		size_t compiledLength;
 
 		std::vector<CppFuck::Opcode> opcodes = CppFuck::Parse(code, length);
-		CppFuck::InitiateVM(opcodes);
+		unsigned char* output = CppFuck::CompileToCppFuck(opcodes, compiledLength);
+		CppFuck::InitiateVM(output, compiledLength);
 
 		// Prints elapsed time in milliseconds.
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - current).count() << "ms" << std::endl;
+		delete[] output;
 	}
 	catch (const CppFuck::BaseCppFuckException& exception)
 	{
@@ -42,7 +47,7 @@ int main(int argc, char* argv[])
 		fseek(file, 0, SEEK_SET);
 		fread(contents, size, 1, file);
 		fclose(file);
-		run(contents, size);
+		run(contents, size, argv);
 		delete[] contents;
 	}
 	else // Interactive mode.
@@ -53,7 +58,7 @@ int main(int argc, char* argv[])
 		{
 			std::cout << ">>> ";
 			std::getline(std::cin, input);
-			run(input.c_str(), input.size());
+			run(input.c_str(), input.size(), argv);
 		}
 	}
 }

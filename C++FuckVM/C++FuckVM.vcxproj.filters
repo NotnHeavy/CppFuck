@@ -33,12 +33,24 @@
     <ClInclude Include="include\BFRuntime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\BFCompiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\BFDecompiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BFParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\BFRuntime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BFCompiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BFDecompiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
