@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
 {
 	if (argc > 1) // Load file.
 	{
+		// todo: options parser, allow user to only compile.
 		FILE* file;
 		if (fopen_s(&file, argv[1], "r") != 0)
 		{

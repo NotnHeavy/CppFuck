@@ -8,7 +8,7 @@
 #define FVERSION_STRINGIZED to_string(V_MAJOR) "." to_string(V_MINOR) "." to_string(V_BUILD) "." to_string(V_REVISION) // Same as the stringized product version.
 #define PRODUCTNAME "C++FuckVM"
 #define ORIGINALNAME PRODUCTNAME ".dll" // Same as internal name.
-#define COPYRIGHT "NotnHeavy, since 2021"
+#define COPYRIGHT "Copyright (C) 2021 NotnHeavy"
 
 #ifdef _DEBUG
 #define IS_DEBUG VS_FF_DEBUG
@@ -17,4 +17,4 @@
 #endif
 
 #define OS VOS_NT_WINDOWS32
-#define FTYPE VFT_APP // For DLLs, do VFT_DLL.
+#define FTYPE VFT_DLL // For DLLs, do VFT_DLL.
