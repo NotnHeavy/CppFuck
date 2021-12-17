@@ -14,5 +14,5 @@ namespace CppFuck
 	};
 
 	// Inintiate the C++Fuck virtual machine and execute Brainfuck code.
-	DECLSPEC void InitiateVM(const unsigned char* const, const size_t& length);
+	DECLSPEC void InitiateVM(const unsigned char* const code, const size_t length);
 }

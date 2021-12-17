@@ -15,27 +15,45 @@ namespace CppFuck
 	};
 
 	// Enum structure for all C++Fuck registers.
+	// There are a few types of the same opcode to allow for larger compiled numbers and less compiled space.
 	enum class DECLSPEC Instructions : unsigned char
 	{
-		NUL = 0,
-		ADD = 1,
-		SUB = 2,
-		MOVL = 3,
-		MOVR = 4,
-		IN = 5,
-		OUT = 6,
-		JE = 7,
-		JNE = 8
+		// STOCK
+		NUL = 0, // default
+		ADD = 1, // +
+		SUB = 2, // -
+		MOVL = 3, // <
+		MOVR = 4, // >
+		IN = 5, // ,
+		OUT = 6, // .
+		JE = 7, // [
+		JNE = 8, // ]
+
+		// OPTIMISED
+		CLS = 9, // clear loop
+		SCNL = 10, // scan left loop
+		SCNR = 11, // scan right loop
+		/*MULL = 12, // multiplication loop with left pointer arithmetic
+		MULR = 13, // multiplication loop with right pointer arithmetic
+		*/
+		MULA = 12, // positive multiplication loop
+		MULS = 13, // negative multiplication loop
+		ADDC = 14, // add with specific count
+		SUBC = 15, // subtract with specific count
+		MOVLC = 16, // left pointer arithmetic with specific count
+		MOVRC = 17, // right pointer arithmetic with specific count
+		SAV = 18, // save current pointer address in register
+		MOV = 19, // set pointer to value stored in register
 	};
 
-	// Struct representation of a C++Fuck register.
+	// Struct representation of a C++Fuck instruction.
 	struct DECLSPEC Opcode
 	{
 		Instructions Token = Instructions::NUL;
 		unsigned long long Line = 0, Column = 0;
-		size_t Offset = 0;
+		unsigned char Count = 0;
 	};
 
 	// C++Fuck parser for parsing BF code into C++Fuck opcodes.
-	DECLSPEC std::vector<Opcode> Parse(const char* const, const unsigned long long&);
+	DECLSPEC std::vector<Opcode> Parse(const unsigned char* const code, const unsigned long long length);
 }

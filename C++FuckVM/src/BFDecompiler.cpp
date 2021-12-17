@@ -1,62 +1,48 @@
 #include <vector>
+#include <string>
 #include <BFParser.h>
 #include <BFDecompiler.h>
 
-unsigned char* CppFuck::DecompileToBF(const unsigned char* const bytecode, const size_t& size, size_t& index)
+std::string CppFuck::DecompileToBF(const unsigned char* const bytecode, const size_t size)
 {
-	size_t bufferSize = 512;
-	size_t fileIndex = 0;
-	index = 0;
-	unsigned char* buffer = new unsigned char[bufferSize] { 0 };
+	size_t index = 0;
+	std::string buffer;
 
-	for (; fileIndex < size; ++fileIndex)
+	for (; index < size; ++index)
 	{
-		if (index + 1 > bufferSize)
+		switch ((Instructions)bytecode[index])
 		{
-			unsigned char* newBuffer = new unsigned char[bufferSize * 2] { 0 };
-			memmove(newBuffer, buffer, bufferSize);
-			bufferSize *= 2;
-			delete[] buffer;
-			buffer = newBuffer;
-		}
-		switch ((Instructions)bytecode[fileIndex])
-		{
+		// Parsed
 		case Instructions::ADD:
-			buffer[index] = '+';
+			buffer += '+';
 			break;
 		case Instructions::SUB:
-			buffer[index] = '-';
+			buffer += '-';
 			break;
 		case Instructions::MOVL:
-			buffer[index] = '<';
+			buffer += '<';
 			break;
 		case Instructions::MOVR:
-			buffer[index] = '>';
+			buffer += '>';
 			break;
 		case Instructions::IN:
-			buffer[index] = ',';
+			buffer += ',';
 			break;
 		case Instructions::OUT:
-			buffer[index] = '.';
+			buffer += '.';
 			break;
 		case Instructions::JE:
-			buffer[index] = '[';
-			fileIndex += sizeof(size_t);
+			buffer += '[';
+			index += sizeof(size_t);
 			break;
 		case Instructions::JNE:
-			buffer[index] = ']';
-			fileIndex += sizeof(size_t);
+			buffer += ']';
+			index += sizeof(size_t);
 			break;
+
+		// Optimised, to be worked on.
 		}
-		++index;
 	}
 
-	if (index != bufferSize)
-	{
-		unsigned char* newBuffer = new unsigned char[index];
-		memmove(newBuffer, buffer, index);
-		delete[] buffer;
-		buffer = newBuffer;
-	}
 	return buffer;
 }

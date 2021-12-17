@@ -3,6 +3,16 @@
 
 namespace CppFuck
 {
+	// Runtime exception to be thrown during runtime.
+	class DECLSPEC DecompilerException : public BaseCppFuckException
+	{
+	public:
+		DecompilerException(const std::string& message)
+			: BaseCppFuckException(message)
+		{
+		}
+	};
+
 	// Take in C++Fuck bytecode and decompile it into BF.
-	DECLSPEC unsigned char* DecompileToBF(const unsigned char* const, const size_t&, size_t&);
+	DECLSPEC std::string DecompileToBF(const unsigned char* const bytecode, const size_t size);
 }
