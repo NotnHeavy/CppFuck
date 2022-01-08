@@ -12,13 +12,10 @@
 #include <BFRuntime.h>
 #include <BFDecompiler.h>
 
-// 0.11:
-// finish decompiler.
-
-// (maybe) 0.12:
+// 0.13:
 // implement basic debugging, i.e. create file containing line/column info. file should use file extension .bfcd.
 
-// 0.13:
+// 0.14:
 // configuration parameters for compilation
 
 // .bfc = brainfuck code
@@ -205,7 +202,7 @@ int main(int argc, char* argv[])
 	}
 	else // Interactive mode.
 	{
-		std::cout << "C++Fuck " << FVERSION_STRINGIZED << " main (compiled on " << __DATE__ << ", " << __TIME__ << " with MSVC, for win64)" << std::endl;
+		std::cout << "C++Fuck " << FVERSION_STRINGIZED << " " << GIT_BRANCH << " (compiled on " << __DATE__ << ", " << __TIME__ << " with MSVC, for win64)" << std::endl;
 		std::string input;
 		while (true)
 		{
