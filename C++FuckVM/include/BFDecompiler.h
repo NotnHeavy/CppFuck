@@ -4,7 +4,7 @@
 namespace CppFuck
 {
 	// Runtime exception to be thrown during runtime.
-	class DECLSPEC DecompilerException : public BaseCppFuckException
+	class CPPFUCK_API DecompilerException : public BaseCppFuckException
 	{
 	public:
 		DecompilerException(const std::string& message)
@@ -14,5 +14,5 @@ namespace CppFuck
 	};
 
 	// Take in C++Fuck bytecode and decompile it into BF.
-	DECLSPEC std::string DecompileToBF(const unsigned char* const bytecode, const size_t size);
+	CPPFUCK_API std::string DecompileToBF(const unsigned char* const bytecode, const size_t size);
 }

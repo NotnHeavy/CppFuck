@@ -5,7 +5,7 @@
 namespace CppFuck
 {
 	// Parser exception to be thrown during parse-time.
-	class DECLSPEC ParserException : public BaseCppFuckException
+	class CPPFUCK_API ParserException : public BaseCppFuckException
 	{
 	public:
 		ParserException(const std::string& message) 
@@ -16,7 +16,7 @@ namespace CppFuck
 
 	// Enum structure for all C++Fuck registers.
 	// There are a few types of the same opcode to allow for larger compiled numbers and less compiled space.
-	enum class DECLSPEC Instructions : unsigned char
+	enum class Instructions : unsigned char
 	{
 		// STOCK
 		NUL = 0, // default
@@ -33,9 +33,6 @@ namespace CppFuck
 		CLS = 9, // clear loop
 		SCNL = 10, // scan left loop
 		SCNR = 11, // scan right loop
-		/*MULL = 12, // multiplication loop with left pointer arithmetic
-		MULR = 13, // multiplication loop with right pointer arithmetic
-		*/
 		MULA = 12, // positive multiplication loop
 		MULS = 13, // negative multiplication loop
 		ADDC = 14, // add with specific count
@@ -47,7 +44,7 @@ namespace CppFuck
 	};
 
 	// Struct representation of a C++Fuck instruction.
-	struct DECLSPEC Opcode
+	struct CPPFUCK_API Opcode
 	{
 		Instructions Token = Instructions::NUL;
 		unsigned long long Line = 0, Column = 0;
@@ -55,5 +52,5 @@ namespace CppFuck
 	};
 
 	// C++Fuck parser for parsing BF code into C++Fuck opcodes.
-	DECLSPEC std::vector<Opcode> Parse(const unsigned char* const code, const unsigned long long length);
+	CPPFUCK_API std::vector<Opcode> Parse(const unsigned char* const code, const unsigned long long length);
 }

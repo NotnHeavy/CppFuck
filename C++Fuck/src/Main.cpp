@@ -4,12 +4,25 @@
 #include <string>
 #include <chrono>
 #include <map>
+#include <sstream>
 #include <version.h>
 #include <BFParser.h>
 #include <BFOptimiser.h>
 #include <BFCompiler.h>
 #include <BFRuntime.h>
 #include <BFDecompiler.h>
+
+// 0.11:
+// finish decompiler.
+
+// (maybe) 0.12:
+// implement basic debugging, i.e. create file containing line/column info. file should use file extension .bfcd.
+
+// 0.13:
+// configuration parameters for compilation
+
+// .bfc = brainfuck code
+// .bfcd = brainfuck code debug info
 
 static inline bool checkIfBytecode(std::string path)
 {
@@ -30,14 +43,14 @@ static int run(const unsigned char* const code, const unsigned long long& length
 		size_t compiledLength;
 
 		if (bytecode)
-			CppFuck::InitiateVM(code, length);
+			CppFuck::InitiateVM(code, length, std::cin, std::cout);
 		else
 		{
 			
 			std::vector<CppFuck::Opcode> opcodes = CppFuck::Parse(code, length);
 			opcodes = CppFuck::Optimise(opcodes);
-			output = CppFuck::CompileToCppFuck(opcodes, compiledLength);
-			CppFuck::InitiateVM(output, compiledLength);
+			output = CppFuck::CompileToCppFuck(opcodes, compiledLength, { { CppFuck::Configuration::OptimiseMemoryCopying, true } });
+			CppFuck::InitiateVM(output, compiledLength, std::cin, std::cout);
 		}
 
 		// Prints elapsed time in milliseconds.
@@ -48,7 +61,7 @@ static int run(const unsigned char* const code, const unsigned long long& length
 	catch (const CppFuck::BaseCppFuckException& exception)
 	{
 		delete[] output;
-		std::cout << exception.what() << std::endl;
+		std::cerr << exception.what() << std::endl;
 		return 1;
 	}
 	return 0;
@@ -59,7 +72,7 @@ static const std::map<const std::string, const std::string> commands
 	{ "-o", "Compile C++Fuck bytecode for a Brainfuck script and create an output file for it." },
 	{ "-run", "Initiate runtime for C++Fuck bytecode. This is unnecessary if no other arguments are being used." },
 	{ "-dec", "Decompile C++Fuck bytecode to a specific output."},
-	{ "-postexec", "Output time taken to execute code."}
+	{ "-postexec", "Output time taken to execute code." }
 };
 
 int main(int argc, char* argv[])
@@ -80,7 +93,7 @@ int main(int argc, char* argv[])
 			FILE* file;
 			if (fopen_s(&file, argv[1], "rb") != 0)
 			{
-				std::cout << "The file \"" << argv[1] << "\" does not exist on your system." << std::endl;
+				std::cerr << "The file \"" << argv[1] << "\" does not exist on your system." << std::endl;
 				return 1;
 			}
 			_fseeki64(file, 0, SEEK_END);
@@ -105,7 +118,7 @@ int main(int argc, char* argv[])
 					{
 						if (std::find(used.begin(), used.end(), argv[i]) != used.end())
 						{
-							std::cout << "The argument \"" << argv[i] << "\" has been used already." << std::endl;
+							std::cerr << "The argument \"" << argv[i] << "\" has been used already." << std::endl;
 							return 1;
 						}
 						std::string argument = argv[i];
@@ -114,7 +127,7 @@ int main(int argc, char* argv[])
 						{
 							if (bytecode)
 							{
-								std::cout << "The file \"" << argv[i] << "\" is already compiled bytecode." << std::endl;
+								std::cerr << "The file \"" << argv[i] << "\" is already compiled bytecode." << std::endl;
 								return 1;
 							}
 							++i;
@@ -125,7 +138,7 @@ int main(int argc, char* argv[])
 							{
 								if (fopen_s(&file, location.c_str(), "wb") != 0)
 								{
-									std::cout << "The file \"" << argv[i] << "\" could not be created. Verify your output directory." << std::endl;
+									std::cerr << "The file \"" << argv[i] << "\" could not be created. Verify your output directory." << std::endl;
 									return 1;
 								}
 								size_t compiledLength;
@@ -148,10 +161,7 @@ int main(int argc, char* argv[])
 						else if (argument == "-run")
 							running = true;
 						else if (argument == "-postexec")
-						{
-							running = true;
 							showExecTime = true;
-						}
 						else if (argument == "-dec")
 						{
 							++i;
@@ -161,7 +171,7 @@ int main(int argc, char* argv[])
 							{
 								if (fopen_s(&file, location.c_str(), "wb") != 0)
 								{
-									std::cout << "The file \"" << argv[i] << "\" could not be created. Verify your output directory." << std::endl;
+									std::cerr << "The file \"" << argv[i] << "\" could not be created. Verify your output directory." << std::endl;
 									return 1;
 								}
 								std::cout << std::endl;
@@ -181,7 +191,7 @@ int main(int argc, char* argv[])
 					}
 					else
 					{
-						std::cout << "The argument \"" << argv[i] << "\" does not exist. Use -? to display the help menu." << std::endl;
+						std::cerr << "The argument \"" << argv[i] << "\" does not exist. Use -? to display the help menu." << std::endl;
 						return 1;
 					}
 				}
@@ -209,7 +219,7 @@ int main(int argc, char* argv[])
 				FILE* file;
 				if (fopen_s(&file, location.c_str(), "rb") != 0)
 				{
-					std::cout << "The file \"" << location << "\" does not exist on your system." << std::endl;
+					std::cerr << "The file \"" << location << "\" does not exist on your system." << std::endl;
 					continue;
 				}
 				_fseeki64(file, 0, SEEK_END);

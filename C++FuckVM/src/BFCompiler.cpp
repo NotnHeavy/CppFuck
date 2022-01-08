@@ -11,14 +11,32 @@ struct jump
 	size_t Index;
 };
 
-unsigned char* CppFuck::CompileToCppFuck(const std::vector<Opcode> opcodes, size_t& index)
+unsigned char* CppFuck::CompileToCppFuck(const std::vector<Opcode> opcodes, size_t& index, std::vector<Setting> settings)
 {
 	size_t size = 512;
 	index = 0;
 	std::stack<size_t> jumps;
 	jump jumpForInstructions = {Instructions::NUL, 0};
-	unsigned char* buffer = new unsigned char[size] { 0 };
+	unsigned char* buffer = new unsigned char[size] {};
 
+	// Compile configuration.
+	for (const Setting& setting : settings)
+	{
+		if (index + 2 + sizeof(size_t) > size)
+		{
+			unsigned char* newBuffer = new unsigned char[size * 2]{ 0 };
+			memmove(newBuffer, buffer, size);
+			size *= 2;
+			delete[] buffer;
+			buffer = newBuffer;
+		}
+		buffer[index++] = (unsigned char)setting.Type;
+		for (size_t i = 0; i < sizeof(size_t); i++) // JE
+			buffer[index++] = static_cast<unsigned char>(setting.Value >> i * 8);
+	}
+	buffer[index++] = 0;
+
+	// Compile code.
 	for (const Opcode& opcode : opcodes)
 	{
 		if (index + 1 + sizeof(size_t) > size)
@@ -29,8 +47,7 @@ unsigned char* CppFuck::CompileToCppFuck(const std::vector<Opcode> opcodes, size
 			delete[] buffer;
 			buffer = newBuffer;
 		}
-		buffer[index] = (unsigned char)opcode.Token;
-		++index;
+		buffer[index++] = (unsigned char)opcode.Token;
 		if (jumpForInstructions.Instruction == opcode.Token)
 		{
 			for (size_t i = 0; i < sizeof(size_t); i++)
@@ -59,9 +76,7 @@ unsigned char* CppFuck::CompileToCppFuck(const std::vector<Opcode> opcodes, size
 			}
 		}
 		else if (opcode.Count > 1 || opcode.Token == Instructions::MULA || opcode.Token == Instructions::MULS)
-		{
 			buffer[index++] = opcode.Count;
-		}
 	}
 
 	if (index != size)

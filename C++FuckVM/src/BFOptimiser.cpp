@@ -45,7 +45,6 @@ static bool checkForScan(std::vector<CppFuck::Opcode>& opcodes, std::vector<CppF
 	return true;
 }
 
-// TEST: use pointer arithmetic and separated multiplication
 static bool checkForMultiplication(std::vector<CppFuck::Opcode>& opcodes, std::vector<CppFuck::Opcode>& opcode, size_t& index)
 {
 	// For comments for loop progress: () means optional, {} means either one but one is needed.

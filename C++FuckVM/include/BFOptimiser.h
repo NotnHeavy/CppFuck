@@ -4,5 +4,5 @@
 namespace CppFuck
 {
 	// Optimise parsed opcodes to improve performance at runtime.
-	DECLSPEC std::vector<Opcode> Optimise(std::vector<Opcode> opcodes);
+	CPPFUCK_API std::vector<Opcode> Optimise(std::vector<Opcode> opcodes);
 }

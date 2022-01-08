@@ -4,14 +4,14 @@
 #include <stdexcept>
 
 #ifdef CPPFUCK_BUILD
-#define DECLSPEC __declspec(dllexport)
+#define CPPFUCK_API __declspec(dllexport)
 #else
-#define DECLSPEC __declspec(dllimport)
+#define CPPFUCK_API __declspec(dllimport)
 #endif
 
 namespace CppFuck
 {
-	class DECLSPEC BaseCppFuckException : public std::runtime_error
+	class CPPFUCK_API BaseCppFuckException : public std::runtime_error
 	{
 	public:
 		BaseCppFuckException(const std::string& message)

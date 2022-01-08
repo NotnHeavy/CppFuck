@@ -116,6 +116,7 @@
       <AdditionalIncludeDirectories>.;include;$(SolutionDir)C++FuckVM\include\</AdditionalIncludeDirectories>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <LanguageStandard>Default</LanguageStandard>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,6 +151,7 @@
       <AdditionalIncludeDirectories>.;include;$(SolutionDir)C++FuckVM\include\</AdditionalIncludeDirectories>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <LanguageStandard>Default</LanguageStandard>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
