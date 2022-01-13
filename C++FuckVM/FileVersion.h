@@ -2,7 +2,7 @@
 
 #pragma once
 #define V_MAJOR 0
-#define V_MINOR 12
-#define V_BUILD 302
-#define V_REVISION 29392
+#define V_MINOR 13
+#define V_BUILD 347
+#define V_REVISION 36736
 #define GIT_BRANCH "master"

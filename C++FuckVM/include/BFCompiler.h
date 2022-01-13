@@ -26,6 +26,23 @@ namespace CppFuck
 		size_t Value;
 	};
 
+	// Information about the bytecode and debug code.
+	struct CPPFUCK_API CompiledInfo
+	{
+		unsigned char* const Bytecode = nullptr, *const DebugCode = nullptr;
+		const size_t BytecodeLength = 0, DebugCodeLength = 0;
+
+		CompiledInfo(unsigned char* const bytecode = nullptr, unsigned char* const debugCode = nullptr, size_t bytecodeLength = 0, size_t debugCodeLength = 0)
+			: Bytecode(bytecode), DebugCode(debugCode), BytecodeLength(bytecodeLength), DebugCodeLength(debugCodeLength)
+		{
+		}
+		~CompiledInfo()
+		{
+			delete[] Bytecode;
+			delete[] DebugCode;
+		}
+	};
+
 	// Take in a vector of opcodes and compile it to CppFuck bytecode.
-	CPPFUCK_API unsigned char* CompileToCppFuck(const std::vector<Opcode> opcodes, size_t& index, std::vector<Setting> settings = {});
+	CPPFUCK_API CompiledInfo CompileToCppFuck(const std::vector<Opcode> opcodes, std::vector<Setting> settings = {});
 }

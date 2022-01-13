@@ -38,5 +38,5 @@ namespace CppFuck
 	};
 
 	// Inintiate the C++Fuck virtual machine and execute Brainfuck code.
-	CPPFUCK_API void InitiateVM(const unsigned char* const code, const size_t length, std::istream& in, std::ostream& out);
+	CPPFUCK_API void InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out);
 }

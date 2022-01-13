@@ -73,7 +73,7 @@ static bool checkForMultiplication(std::vector<CppFuck::Opcode>& opcodes, std::v
 	while (opcodes[tempIndex].Token == initialShift)
 	{
 		bool limit = false;
-		size_t line = opcodes[index].Line, column = opcodes[index].Column;
+		size_t line = opcodes[tempIndex].Line, column = opcodes[tempIndex].Column;
 
 		unsigned char count = static_cast<unsigned char>(advance(initialShift, opcodes, tempIndex, &limit));
 		if (limit)
@@ -103,7 +103,6 @@ static bool checkForMultiplication(std::vector<CppFuck::Opcode>& opcodes, std::v
 
 std::vector<CppFuck::Opcode> CppFuck::Optimise(std::vector<Opcode> opcodes)
 {
-	// todo: scan loops, clear loops, multiply loops, dead code elimination, micro-optimisation for loops that don't need JE/JNE.
 	std::vector<Opcode> optimised;
 	size_t index = 0;
 	Instructions lastInstruction = Instructions::NUL;
@@ -130,7 +129,7 @@ std::vector<CppFuck::Opcode> CppFuck::Optimise(std::vector<Opcode> opcodes)
 			std::vector<Opcode> opcode;
 			if (checkForClear(opcodes, opcode, index) || checkForScan(opcodes, opcode, index) || checkForMultiplication(opcodes, opcode, index))
 			{
-				if (lastInstruction == opcode[0].Token && opcode[0].Token == Instructions::CLS) // Might look into combining multiplication loops.
+				if (lastInstruction == opcode[0].Token && opcode[0].Token == Instructions::CLS)
 					continue;
 				lastInstruction = opcode.back().Token;
 				optimised.reserve(opcode.size());
