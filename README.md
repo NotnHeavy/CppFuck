@@ -1,5 +1,5 @@
 # C++Fuck
-C++Fuck (otherwise known as CppFuck due to limitations) is an optimised Brainfuck virtual machine that can be easily integrated into any application.
+C++Fuck (otherwise known as CppFuck due to limitations) is an optimised Brainfuck virtual machine that can be easily integrated into any application. Currently, I am working on compilation only for Windows.
 
 C++Fuck is split into two projects: C++Fuck and C++FuckVM.
 
