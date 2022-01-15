@@ -1,5 +1,6 @@
 #pragma once
 #include <dynamiclib.h>
+#include <BFlib.h>
 
 namespace CppFuck
 {

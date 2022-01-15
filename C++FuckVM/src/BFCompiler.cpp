@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <BFParser.h>
 #include <BFCompiler.h>
+#include <BFlib.h>
 
 struct jump
 {
@@ -22,14 +23,7 @@ CppFuck::CompiledInfo CppFuck::CompileToCppFuck(const std::vector<Opcode> opcode
 	// Compile configuration.
 	for (const Setting& setting : settings)
 	{
-		if (index + 2 + sizeof(size_t) > size)
-		{
-			unsigned char* newBuffer = new unsigned char[size * 2]{ 0 };
-			memmove(newBuffer, buffer, size);
-			size *= 2;
-			delete[] buffer;
-			buffer = newBuffer;
-		}
+		cpprealloc<unsigned char>(&buffer, size, size * 2, index + 2 + sizeof(size_t) > size);
 		if (setting.Type == Configuration::OutOfBoundsBehaviour)
 			errorOnOutOfBounds = setting.Value == 0 ? true : false;
 		buffer[index++] = (unsigned char)setting.Type;
@@ -41,14 +35,7 @@ CppFuck::CompiledInfo CppFuck::CompileToCppFuck(const std::vector<Opcode> opcode
 	// Compile code.
 	for (const Opcode& opcode : opcodes)
 	{
-		if (index + 1 + sizeof(size_t) > size)
-		{
-			unsigned char* newBuffer = new unsigned char[size * 2] { 0 };
-			memmove(newBuffer, buffer, size);
-			size *= 2;
-			delete[] buffer;
-			buffer = newBuffer;
-		}
+		cpprealloc<unsigned char>(&buffer, size, size * 2, index + 1 + sizeof(size_t) > size);
 		// This is weird but there's just a lot of conditions.
 		if
 		(
@@ -63,14 +50,7 @@ CppFuck::CompiledInfo CppFuck::CompileToCppFuck(const std::vector<Opcode> opcode
 			&& errorOnOutOfBounds
 		)
 		{
-			if (debugIndex + sizeof(size_t) * 3 > debugSize)
-			{
-				unsigned char* newBuffer = new unsigned char[debugSize * 2]{ 0 };
-				memmove(newBuffer, debug, size);
-				debugSize *= 2;
-				delete[] debug;
-				debug = newBuffer;
-			}
+			cpprealloc<unsigned char>(&debug, debugSize, debugSize * 2, debugIndex + sizeof(size_t) * 3 > debugSize);
 			for (size_t i = 0; i < sizeof(size_t); i++) // Bytecode index.
 				debug[debugIndex++] = static_cast<unsigned char>(index >> i * 8);
 			for (size_t i = 0; i < sizeof(size_t); i++) // Opcode line.
@@ -103,23 +83,11 @@ CppFuck::CompiledInfo CppFuck::CompileToCppFuck(const std::vector<Opcode> opcode
 			for (size_t i = 0; i < sizeof(size_t); i++) // JNE
 				buffer[index++] = static_cast<unsigned char>((lastJE + sizeof(size_t)) >> i * 8);
 		}
-		else if (opcode.Count > 1 || opcode.Token == Instructions::MULA || opcode.Token == Instructions::MULS)
+		else if (opcode.Count > 1 || opcode.Token == Instructions::MULA || opcode.Token == Instructions::MULS || opcode.Token == Instructions::SCNL || opcode.Token == Instructions::SCNR)
 			buffer[index++] = opcode.Count;
 	}
 
-	if (index != size)
-	{
-		unsigned char* newBuffer = new unsigned char[index];
-		memmove(newBuffer, buffer, index);
-		delete[] buffer;
-		buffer = newBuffer;
-	}
-	if (debugIndex != debugSize)
-	{
-		unsigned char* newBuffer = new unsigned char[debugIndex];
-		memmove(newBuffer, debug, debugIndex);
-		delete[] debug;
-		debug = newBuffer;
-	}
+	cpprealloc<unsigned char>(&buffer, size, index, index != size);
+	cpprealloc<unsigned char>(&debug, debugSize, debugIndex, debugIndex != debugSize);
 	return CompiledInfo( buffer, debug, index, debugIndex );
  }

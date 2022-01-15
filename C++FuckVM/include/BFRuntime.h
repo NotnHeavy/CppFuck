@@ -1,14 +1,20 @@
 #pragma once
 #include <dynamiclib.h>
+#include <BFlib.h>
 
 namespace CppFuck
 {
 	// Runtime exception to be thrown during runtime.
+	// If the line/column numbers could not be obtained, line will be set to the bytecode index and column will be set to 0.
+	// If all four variables are set to 0, that means the exception was thrown during configuration analysis.
 	class CPPFUCK_API RuntimeException : public BaseCppFuckException
 	{
 	public:
-		RuntimeException(const std::string& message)
-			: BaseCppFuckException(message)
+		// VM information.
+		const size_t BufferSize, Line, Column;
+
+		RuntimeException(const std::string& message, const size_t bufferSize, const size_t line, const size_t column)
+			: BufferSize(bufferSize), Line(line), Column(column), BaseCppFuckException(message)
 		{
 		}
 	};

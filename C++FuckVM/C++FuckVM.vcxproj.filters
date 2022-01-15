@@ -42,6 +42,9 @@
     <ClInclude Include="include\BFOptimiser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\BFlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BFParser.cpp">

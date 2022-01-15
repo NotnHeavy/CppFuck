@@ -22,7 +22,7 @@ static size_t advance(CppFuck::Instructions instruction, std::vector<CppFuck::Op
 
 static bool checkForClear(std::vector<CppFuck::Opcode>& opcodes, std::vector<CppFuck::Opcode>& opcode, size_t& index)
 {
-	size_t line = opcodes[index].Line, column = opcodes[index].Column, tempIndex = index;
+	size_t tempIndex = index;
 	++tempIndex;
 	if (opcodes[tempIndex].Token != CppFuck::Instructions::ADD && opcodes[tempIndex].Token != CppFuck::Instructions::SUB)
 		return false;
@@ -36,12 +36,16 @@ static bool checkForClear(std::vector<CppFuck::Opcode>& opcodes, std::vector<Cpp
 
 static bool checkForScan(std::vector<CppFuck::Opcode>& opcodes, std::vector<CppFuck::Opcode>& opcode, size_t& index)
 {
-	size_t line = opcodes[index].Line, column = opcodes[index].Column, tempIndex = index;
+	size_t line = opcodes[index + 1].Line, column = opcodes[index + 1].Column, tempIndex = index;
 	++tempIndex;
-	if ((opcodes[tempIndex].Token != CppFuck::Instructions::MOVL && opcodes[tempIndex].Token != CppFuck::Instructions::MOVR) || opcodes[tempIndex + 1].Token != CppFuck::Instructions::JNE || opcodes[tempIndex].Count != 1)
+	if (opcodes[tempIndex].Token != CppFuck::Instructions::MOVL && opcodes[tempIndex].Token != CppFuck::Instructions::MOVR)
 		return false;
-	index = tempIndex + 2;
-	opcode.push_back(opcodes[tempIndex].Token == CppFuck::Instructions::MOVL ? CppFuck::Opcode { CppFuck::Instructions::SCNL, line, column } : CppFuck::Opcode{ CppFuck::Instructions::SCNR, line, column });
+	bool limit = false;
+	unsigned char count = advance(opcodes[tempIndex].Token, opcodes, tempIndex, &limit);
+	if (limit || opcodes[tempIndex].Token != CppFuck::Instructions::JNE)
+		return false;
+	index = tempIndex + 1;
+	opcode.push_back({ opcodes[tempIndex - 1].Token == CppFuck::Instructions::MOVL ? CppFuck::Instructions::SCNL : CppFuck::Instructions::SCNR, line, column, count });
 	return true;
 }
 

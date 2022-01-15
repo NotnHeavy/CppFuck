@@ -1,5 +1,7 @@
 // todo: (maybe) revert vector item allocation to stack.
 
+#define CPPFUCK_VERSION "C++Fuck " << FVERSION_STRINGIZED << " " << GIT_BRANCH << " (compiled on " << __DATE__ << ", " << __TIME__ << " with MSVC, for win64). Licensed with MIT."
+
 #include <iostream>
 #include <string>
 #include <chrono>
@@ -12,10 +14,6 @@
 #include <BFRuntime.h>
 #include <BFDecompiler.h>
 
-// 0.14:
-// configuration parameters for compilation.
-// clean up code, eliminate bugs.
-
 static inline bool checkIfBytecode(std::string path)
 {
 	size_t position = path.find_last_of('.');
@@ -25,7 +23,7 @@ static inline bool checkIfBytecode(std::string path)
 		return false;
 }
 
-static int run(const unsigned char* const code, const unsigned long long& length, bool showExecTime = true, CppFuck::CompiledInfo* info = nullptr)
+static int run(const unsigned char* const code, const unsigned long long& length, bool showExecTime = true, CppFuck::CompiledInfo* info = nullptr, std::vector<CppFuck::Setting> settings = { }, bool optimise = true)
 {
 	unsigned char* output = nullptr;
 	try
@@ -39,8 +37,9 @@ static int run(const unsigned char* const code, const unsigned long long& length
 		else
 		{
 			std::vector<CppFuck::Opcode> opcodes = CppFuck::Parse(code, length);
-			opcodes = CppFuck::Optimise(opcodes);
-			CppFuck::CompiledInfo info = CppFuck::CompileToCppFuck(opcodes, { { CppFuck::Configuration::OptimiseMemoryCopying, true } });
+			if (optimise)
+				opcodes = CppFuck::Optimise(opcodes);
+			CppFuck::CompiledInfo info = CppFuck::CompileToCppFuck(opcodes, settings);
 			CppFuck::InitiateVM(info, std::cin, std::cout);
 		}
 
@@ -52,7 +51,7 @@ static int run(const unsigned char* const code, const unsigned long long& length
 	catch (const CppFuck::BaseCppFuckException& exception)
 	{
 		delete[] output;
-		std::cerr << exception.what() << std::endl;
+		std::cerr << "\n\n" << exception.what() << std::endl;
 		return 1;
 	}
 	return 0;
@@ -95,13 +94,50 @@ static CppFuck::CompiledInfo getBytecode(std::string location, unsigned char* by
 	return CppFuck::CompiledInfo(bytecode, debugCode, bytecodeSize, debugCodeSize);
 }
 
-static const std::map<const std::string, const std::string> commands
+struct command
 {
-	{ "-o", "Compile C++Fuck bytecode for a Brainfuck script and create an output file for it." },
-	{ "-run", "Initiate runtime for C++Fuck bytecode. This is unnecessary if no other arguments are being used." },
-	{ "-dec", "Decompile C++Fuck bytecode to a specific output."},
-	{ "-postexec", "Output time taken to execute code." }
+	const std::string Name, Parameters, Description;
+	command(const std::string name, const std::string parameters, const std::string description)
+		: Name(name), Parameters(parameters), Description(description)
+	{
+	}
 };
+
+static const std::vector<command> commands
+{
+	{ "-o", "[file]", "Compile C++Fuck bytecode for a Brainfuck script and create an output file for it." },
+	{ "--run", "", "Initiate runtime for C++Fuck bytecode. This is unnecessary if no other arguments are being used." },
+	{ "--dec", "[file]", "Decompile C++Fuck bytecode to a specific output."},
+	{ "--postexec", "", "Output time taken to execute code." },
+	{ "--version", "", "Display version information." }
+};
+
+static const std::vector<command> compileCommands
+{
+	{ "--optimise", "[true/false]", "Enable/disable optimisation." },
+	{ "--setbuffersize", "[size]", "Set the buffer size. 30000 by default." },
+	{ "--outofboundsbehaviour", "[0/1/2]", "Toggle between error (0), expand the buffer automatically (1) or wrap around the buffer (2). Errors by default (0)." },
+	{ "--optimisememorycopying", "[true/false]", "Toggle between robustness (bit shifts) and speed (memcpy) for copying integral values from bytecode to memory. Uses bit shifts by default." },
+	{ "--eofhandling", "[0/1/2]", "Toggle between no change (0), set to -1 (1) or set to 0 (2). Sets to 0 by default (2)." }
+};
+
+static size_t evaluate(const std::string& value)
+{
+	if (value == "true")
+		return 1;
+	else if (value == "false")
+		return 0;
+	else
+	{
+		std::istringstream stream(value);
+		size_t value;
+		stream >> value;
+		if (stream.fail())
+			return std::numeric_limits<size_t>::max();
+		else
+			return value;
+	}
+}
 
 int main(int argc, char* argv[])
 {
@@ -111,18 +147,33 @@ int main(int argc, char* argv[])
 		if (firstArg == "-?")
 		{
 			std::cout << "Usage: C++Fuck [file] [options]\n\nAll options:\n-?: Displays help information." << std::endl;
-			for (const std::pair<const std::string, const std::string>& command : commands)
-				std::cout << command.first << ": " << command.second << std::endl;
+			for (const command& command : commands)
+				std::cout << command.Name << (command.Parameters != "" ? " " + command.Parameters : "") << ": " << command.Description << std::endl;
+
+			std::cout << "\n" << "Parameters for code configuration:" << std::endl;
+			for (const command& command : compileCommands)
+				std::cout << command.Name << (command.Parameters != "" ? " " + command.Parameters : "") << ": " << command.Description << std::endl;
+			std::cout << "\n" << "True/false evaluate to 1/0." << "\n" << "If the only parameter parsed is the file, it will be compiled and executed on the fly. Otherwise, you'll have to use the \"-run\" parameter as well." << std::endl;
 		}
 		else
 		{
+			// Initial CL parsing.
+			size_t i = 1;
+			if ((std::string)argv[i] == "-version")
+			{
+				std::cout << CPPFUCK_VERSION << std::endl;
+				++i;
+				if (argc < 3)
+					return 0;
+			}
+
 			// Load file.
 			int error = 0;
 			bool bytecode = checkIfBytecode(firstArg);
 			FILE* file;
-			if (fopen_s(&file, argv[1], "rb") != 0)
+			if (fopen_s(&file, argv[i], "rb") != 0)
 			{
-				std::cerr << "The file \"" << argv[1] << "\" does not exist on your system." << std::endl;
+				std::cerr << "The file \"" << argv[i] << "\" does not exist on your system." << std::endl;
 				return 1;
 			}
 			_fseeki64(file, 0, SEEK_END);
@@ -131,9 +182,10 @@ int main(int argc, char* argv[])
 			_fseeki64(file, 0, SEEK_SET);
 			fread(contents, size, 1, file);
 			fclose(file);
+			++i;
 
 			// Parse options.
-			if (argc < 3)
+			if (argc < i + 1)
 			{
 				if (bytecode)
 				{
@@ -146,98 +198,132 @@ int main(int argc, char* argv[])
 			else
 			{
 				const std::chrono::steady_clock::time_point current = std::chrono::high_resolution_clock::now();
-				bool running = false;
-				bool showExecTime = false;
+				bool running = false, showExecTime = false, optimise = true, compile = false, decompile = false;
 				std::vector<std::string> used;
-				for (size_t i = 2; i < argc; ++i)
+				std::vector<CppFuck::Setting> configuration;
+				std::string location;
+				for (; i < argc; ++i)
 				{
-					if (commands.count(argv[i]))
+					std::string argument = argv[i];
+					//if (std::find_if(commands.begin(), commands.end(), [&argument](const command& command) { return command.Name == argument; }) != commands.end())
+					if (std::find_if(commands.begin(), commands.end(), [&argument](const command& cmd) { return cmd.Name == argument; }) != commands.end())
 					{
 						if (std::find(used.begin(), used.end(), argv[i]) != used.end())
 						{
 							std::cerr << "The argument \"" << argv[i] << "\" has been used already." << std::endl;
 							return 1;
 						}
-						std::string argument = argv[i];
 						used.push_back(argument);
 						if (argument == "-o")
 						{
-							if (bytecode)
-							{
-								std::cerr << "The file \"" << argv[i] << "\" is already compiled bytecode." << std::endl;
-								return 1;
-							}
-							++i;
-							std::string location = argv[i];
-							FILE* file = nullptr;
-							try
-							{
-								if (fopen_s(&file, (location + ".bfc").c_str(), "wb") != 0)
-								{
-									std::cerr << "The file \"" << (location + ".bfc") << "\" could not be created. Verify your output directory." << std::endl;
-									return 1;
-								}
-								std::vector<CppFuck::Opcode> opcodes = CppFuck::Parse(contents, size);
-								opcodes = CppFuck::Optimise(opcodes);
-								CppFuck::CompiledInfo info = CppFuck::CompileToCppFuck(opcodes);
-								fwrite(info.Bytecode, info.BytecodeLength, 1, file);
-								fclose(file);
-								file = nullptr;
-								if (fopen_s(&file, (location + ".bfcd").c_str(), "wb") != 0)
-								{
-									std::cerr << "The file \"" << (location + ".bfcd") << "\" could not be created. Verify your output directory." << std::endl;
-									return 1;
-								}
-								fwrite(info.DebugCode, info.DebugCodeLength, 1, file);
-								fclose(file);
-							}
-							catch (const CppFuck::BaseCppFuckException& exception)
-							{
-								std::cout << exception.what() << std::endl;
-								delete[] contents;
-								fclose(file);
-								remove(location.c_str());
-								return 1;
-							}
+							compile = true;
+							location = argv[++i];
 						}
-						else if (argument == "-run")
+						else if (argument == "--run")
 							running = true;
-						else if (argument == "-postexec")
+						else if (argument == "--postexec")
 							showExecTime = true;
-						else if (argument == "-dec")
+						else if (argument == "--dec")
 						{
-							++i;
-							std::string location = (std::string)argv[i] + ".bf";
-							FILE* file = nullptr;
-							try
-							{
-								if (fopen_s(&file, location.c_str(), "wb") != 0)
-								{
-									std::cerr << "The file \"" << location << "\" could not be created. Verify your output directory." << std::endl;
-									return 1;
-								}
-								std::string output = CppFuck::DecompileToBF(contents, size);
-								fwrite(output.c_str(), output.length(), 1, file);
-								fclose(file);
-							}
-							catch (const CppFuck::BaseCppFuckException& exception)
-							{
-								std::cout << exception.what() << std::endl;
-								delete[] contents;
-								fclose(file);
-								remove(location.c_str());
-								return 1;
-							}
+							decompile = true;
+							location = (std::string)argv[++i] + ".bf";
 						}
+						else if (argument == "--version")
+							std::cout << CPPFUCK_VERSION << std::endl;
 					}
 					else
 					{
-						std::cerr << "The argument \"" << argv[i] << "\" does not exist. Use -? to display the help menu." << std::endl;
+						const std::vector<command>::const_iterator iterator = std::find_if(compileCommands.begin(), compileCommands.end(), [&argument](const command& command) { return command.Name == argument; });
+						if (iterator == compileCommands.end())
+						{
+							std::cerr << "The argument \"" << argv[i] << "\" does not exist. Use -? to display the help menu." << std::endl;
+							return 1;
+						}
+						size_t value = evaluate(argv[++i]);
+					    if (argument == "--optimise")
+							optimise = value;
+						else
+							configuration.push_back({ (CppFuck::Configuration)(size_t)(iterator - compileCommands.begin()), value });
+					}
+				}
+
+				// Execute anything that should be executed last.
+				if (running)
+				{
+					if (bytecode)
+					{
+						CppFuck::CompiledInfo info = getBytecode(argv[1], contents, size);
+						error = run(contents, size, showExecTime, &info, configuration, optimise);
+					}
+					else
+						error = run(contents, size, showExecTime, nullptr, configuration, optimise);
+					showExecTime = false;
+				}
+				if (compile)
+				{
+					// File variables.
+					if (bytecode)
+					{
+						std::cerr << "The file \"" << location << "\" is already compiled bytecode." << std::endl;
+						return 1;
+					}
+					FILE* file = nullptr;
+
+					// Compile code.
+					try
+					{
+						if (fopen_s(&file, (location + ".bfc").c_str(), "wb") != 0)
+						{
+							std::cerr << "The file \"" << (location + ".bfc") << "\" could not be created. Verify your output directory." << std::endl;
+							return 1;
+						}
+						std::vector<CppFuck::Opcode> opcodes = CppFuck::Parse(contents, size);
+						if (optimise)
+							opcodes = CppFuck::Optimise(opcodes);
+						CppFuck::CompiledInfo info = CppFuck::CompileToCppFuck(opcodes, configuration);
+						fwrite(info.Bytecode, info.BytecodeLength, 1, file);
+						fclose(file);
+						file = nullptr;
+						if (fopen_s(&file, (location + ".bfcd").c_str(), "wb") != 0)
+						{
+							std::cerr << "The file \"" << (location + ".bfcd") << "\" could not be created. Verify your output directory." << std::endl;
+							return 1;
+						}
+						fwrite(info.DebugCode, info.DebugCodeLength, 1, file);
+						fclose(file);
+					}
+					catch (const CppFuck::BaseCppFuckException& exception)
+					{
+						std::cout << exception.what() << std::endl;
+						delete[] contents;
+						fclose(file);
+						remove(location.c_str());
 						return 1;
 					}
 				}
-				if (running)
-					error = run(contents, size, bytecode);
+				if (decompile)
+				{
+					FILE* file = nullptr;
+					try
+					{
+						if (fopen_s(&file, location.c_str(), "wb") != 0)
+						{
+							std::cerr << "The file \"" << location << "\" could not be created. Verify your output directory." << std::endl;
+							return 1;
+						}
+						std::string output = CppFuck::DecompileToBF(contents, size);
+						fwrite(output.c_str(), output.length(), 1, file);
+						fclose(file);
+					}
+					catch (const CppFuck::BaseCppFuckException& exception)
+					{
+						std::cout << exception.what() << std::endl;
+						delete[] contents;
+						fclose(file);
+						remove(location.c_str());
+						return 1;
+					}
+				}
 				if (showExecTime)
 					std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - current).count() << "ms" << std::endl;
 			}
@@ -247,7 +333,7 @@ int main(int argc, char* argv[])
 	}
 	else // Interactive mode.
 	{
-		std::cout << "C++Fuck " << FVERSION_STRINGIZED << " " << GIT_BRANCH << " (compiled on " << __DATE__ << ", " << __TIME__ << " with MSVC, for win64)" << std::endl;
+		std::cout << CPPFUCK_VERSION << std::endl;
 		std::string input;
 		while (true)
 		{

@@ -28,7 +28,7 @@ std::string CppFuck::DecompileToBF(const unsigned char* const bytecode, const si
 	std::string buffer;
 
 	// Compiled settings.
-	while (bytecode[index] != 0)
+	while (bytecode[index] != 0 && index < size)
 	{
 		if (bytecode[index] > 4)
 			throw DecompilerException("Decompiler: " + std::to_string(bytecode[index]) + " is not a valid setting.");
@@ -74,10 +74,10 @@ std::string CppFuck::DecompileToBF(const unsigned char* const bytecode, const si
 			buffer += "[-]";
 			break;
 		case Instructions::SCNL:
-			buffer += "[<]";
+			buffer += "[" + std::string(bytecode[++index], '<') + "]";
 			break;
 		case Instructions::SCNR:
-			buffer += "[>]";
+			buffer += "[" + std::string(bytecode[++index], '>') + "]";
 			break;
 		case Instructions::ADDC:
 			buffer += std::string(bytecode[++index], '+');

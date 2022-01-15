@@ -158,6 +158,7 @@
     <ClInclude Include="FileVersion.h" />
     <ClInclude Include="include\BFCompiler.h" />
     <ClInclude Include="include\BFDecompiler.h" />
+    <ClInclude Include="include\BFlib.h" />
     <ClInclude Include="include\BFOptimiser.h" />
     <ClInclude Include="include\BFRuntime.h" />
     <ClInclude Include="include\dynamiclib.h" />

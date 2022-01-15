@@ -4,6 +4,7 @@
 #include <BFParser.h>
 #include <BFCompiler.h>
 #include <BFRuntime.h>
+#include <BFlib.h>
 
 // there seems to be a slight overhead now. previous mandelbrot time on release: 5990ms. now: 8000ms
 
@@ -24,7 +25,7 @@ enum class outOfBoundsHandler : unsigned char
 static __forceinline void grabValue(unsigned char* buffer, const size_t& length, size_t& index, size_t& value, bool usememcpy = false)
 {
 	if (usememcpy)
-		memcpy(&value, buffer + index + 1, sizeof(size_t));
+		memcpy(&value, buffer + index, sizeof(size_t));
 	else
 	{
 		for (size_t i = 0; i < sizeof(size_t) && index < length; ++i)
@@ -62,14 +63,14 @@ static void throwError(std::string error, size_t& bytecodeIndex, size_t& size, s
 		}
 
 	}
-	throw CppFuck::RuntimeException("Runtime: " + error + "\n\nBuffer size: " + std::to_string(size) + "\n" + (line != 0 ? "Line " + std::to_string(line) + " : " + std::to_string(column) : "Bytecode index: " + std::to_string(bytecodeIndex)));
+	throw CppFuck::RuntimeException("Runtime: " + error + "\n\nBuffer size: " + std::to_string(size) + "\n" + (line != 0 ? "Line " + std::to_string(line) + " : " + std::to_string(column) : "Bytecode index: " + std::to_string(bytecodeIndex)), size, line != 0 ? line : bytecodeIndex, column);
 }
 
 void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out)
 {
 	// Analyse configuration.
 	size_t index = 0, size = 30000;
-	bool optimiseMemoryCopying = false;
+	bool optimiseMemoryCopying = true;
 	eofHandler eof = eofHandler::Zero;
 	outOfBoundsHandler outOfBounds = outOfBoundsHandler::Error;
 	while (index < info.BytecodeLength)
@@ -90,7 +91,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 			size_t value = 0;
 			grabValue(info.Bytecode, info.BytecodeLength, index, value);
 			if (value > 2)
-				throw CppFuck::RuntimeException(std::to_string(value) + " is not a valid option for setting OutOfBoundsBehaviour.");
+				throw CppFuck::RuntimeException(std::to_string(value) + " is not a valid option for setting OutOfBoundsBehaviour.", 0, 0, 0);
 			outOfBounds = (outOfBoundsHandler)value;
 			break;
 		}
@@ -104,12 +105,12 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 			size_t value = 0;
 			grabValue(info.Bytecode, info.BytecodeLength, index, value);
 			if (value > 2)
-				throw CppFuck::RuntimeException(std::to_string(value) + " is not a valid option for setting EoFHandling.");
+				throw CppFuck::RuntimeException(std::to_string(value) + " is not a valid option for setting EoFHandling.", 0, 0, 0);
 			eof = (eofHandler)value;
 			break;
 		}
 		default:
-			throw CppFuck::RuntimeException(std::to_string(info.Bytecode[index]) + " is not a valid setting.");
+			throw CppFuck::RuntimeException(std::to_string(info.Bytecode[index]) + " is not a valid setting.", 0, 0, 0);
 		}
 	}
 
@@ -134,13 +135,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 			{
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(&newBuffer[size], buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin, size);
 					buffer = (unsigned char*)(begin + size / 2 - 1);
 					break;
 				}
@@ -159,13 +154,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 			{
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(newBuffer, buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin);
 					buffer = (unsigned char*)(begin + size / 2);
 					break;
 				}
@@ -175,7 +164,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 					break;
 				}
 				else
-					throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer - begin), index, size, begin, buffer, info);
+					throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer - begin + 1), index, size, begin, buffer, info);
 			}
 			++buffer;
 			break;
@@ -196,13 +185,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
 					expandl:
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(&newBuffer[size], buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin, size);
 					buffer = (unsigned char*)(begin + offset);
 					if ((size_t)buffer - value < begin)
 						goto expandl;
@@ -227,13 +210,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
 					expandr:
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(newBuffer, buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin);
 					buffer = (unsigned char*)(begin + offset);
 					if ((size_t)buffer + value > begin + size - 1)
 						goto expandr;
@@ -244,7 +221,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 					break;
 				}
 				else
-					throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer + value - 1 - begin), --index, size, begin, buffer, info);
+					throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer + value - begin), --index, size, begin, buffer, info);
 			}
 			buffer += value;
 			break;
@@ -274,7 +251,9 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 		case Instructions::JE:
 			if (!*buffer)
 			{
-				grabValue(info.Bytecode, info.BytecodeLength, index, index, optimiseMemoryCopying);
+				size_t tempIndex = index + 1;
+				index = 0;
+				grabValue(info.Bytecode, info.BytecodeLength, tempIndex, index, optimiseMemoryCopying);
 				continue;
 			}
 			else 
@@ -283,7 +262,9 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 		case Instructions::JNE:
 			if (*buffer)
 			{
-				grabValue(info.Bytecode, info.BytecodeLength, index, index, optimiseMemoryCopying);
+				size_t tempIndex = index + 1;
+				index = 0;
+				grabValue(info.Bytecode, info.BytecodeLength, tempIndex, index, optimiseMemoryCopying);
 				continue;
 			}
 			else 
@@ -293,60 +274,55 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 			*buffer = 0;
 			break;
 		case Instructions::SCNL:
+		{
+			unsigned char count = info.Bytecode[++index];
 			while (*buffer)
 			{
-				if ((size_t)buffer - 1 < begin)
+				if ((size_t)buffer - count < begin)
 				{
+					size_t offset = (size_t)buffer - begin + size;
 					if (outOfBounds == outOfBoundsHandler::Expand)
 					{
-						buffer = (unsigned char*)begin;
-						unsigned char* newBuffer = new unsigned char[size * 2]{ };
-						memmove(newBuffer, buffer, size);
-						size *= 2;
-						delete[] buffer;
-						buffer = newBuffer;
-						begin = (size_t)buffer;
-						buffer = (unsigned char*)(begin + size / 2 - 1);
+						expandscnl:
+						cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin, size);
+						buffer = (unsigned char*)(begin + offset);
+						if ((size_t)buffer - count < begin)
+							goto expandscnl;
 					}
 					else if (outOfBounds == outOfBoundsHandler::Wrap)
-					{
-						buffer = (unsigned char*)(begin + size - 1);
-						break;
-					}
+						buffer = (unsigned char*)(begin + (offset + size - count) % size);
 					else
-						throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: -" + std::to_string(begin - ((size_t)buffer - 1)), index, size, begin, buffer, info);
+						throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: -" + std::to_string(begin - ((size_t)buffer - count)), --index, size, begin, buffer, info);
 				}
-				--buffer;
+				buffer -= count;
 			}
 			break;
+		}
 		case Instructions::SCNR:
+		{
+			unsigned char count = info.Bytecode[++index];
 			while (*buffer)
 			{
-				if ((size_t)buffer + 1 > begin + size)
+				if ((size_t)buffer + count > begin + size - 1)
 				{
+					size_t offset = (size_t)buffer - begin;
 					if (outOfBounds == outOfBoundsHandler::Expand)
 					{
-						buffer = (unsigned char*)begin;
-						unsigned char* newBuffer = new unsigned char[size * 2]{ };
-						memmove(newBuffer, buffer, size);
-						size *= 2;
-						delete[] buffer;
-						buffer = newBuffer;
-						begin = (size_t)buffer;
-						buffer = (unsigned char*)(begin + size / 2);
-						break;
+						expandscnr:
+						cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin);
+						buffer = (unsigned char*)(begin + offset);
+						if ((size_t)buffer + count > begin + size)
+							goto expandscnr;
 					}
 					else if (outOfBounds == outOfBoundsHandler::Wrap)
-					{
-						buffer = (unsigned char*)begin;
-						break;
-					}
+						buffer = (unsigned char*)(begin + (offset + count) % size);
 					else
-						throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer - begin) + (std::string)" at bytecode index ", index, size, begin, buffer, info);
+						throwError("Undefined behaviour prevented from out-of-bounds pointer. Illegal buffer index: " + std::to_string((size_t)buffer - begin + count) + (std::string)" at bytecode index ", --index, size, begin, buffer, info);
 				}
-				++buffer;
+				buffer += count;
 			}
 			break;
+		}
 		case Instructions::MULA:
 		{
 			++index;
@@ -356,13 +332,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
 					size_t offset = (size_t)buffer - begin;
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(&newBuffer[size], buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin, size);
 					buffer = (unsigned char*)(begin + offset);
 				}
 				else if (outOfBounds == outOfBoundsHandler::Wrap)
@@ -382,13 +352,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
 					size_t offset = (size_t)buffer - begin;
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(&newBuffer[size], buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin, size);
 					buffer = (unsigned char*)(begin + offset);
 				}
 				else if (outOfBounds == outOfBoundsHandler::Wrap)
@@ -410,13 +374,7 @@ void CppFuck::InitiateVM(CompiledInfo& info, std::istream& in, std::ostream& out
 				if (outOfBounds == outOfBoundsHandler::Expand)
 				{
 					size_t offset = (size_t)buffer - begin;
-					buffer = (unsigned char*)begin;
-					unsigned char* newBuffer = new unsigned char[size * 2]{ };
-					memmove(&newBuffer[size], buffer, size);
-					size *= 2;
-					delete[] buffer;
-					buffer = newBuffer;
-					begin = (size_t)buffer;
+					cpprealloc<unsigned char>(&buffer, size, size * 2, true, &begin, size);
 					buffer = (unsigned char*)(begin + offset);
 				}
 				else if (outOfBounds == outOfBoundsHandler::Wrap)
