@@ -18,3 +18,5 @@ For integration, everything is in the CppFuck namespace. Include the necessary h
 Have fun!
 
 ### MIT (2021), created by NotnHeavy.
+
+this code is kinda weird
